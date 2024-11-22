@@ -68,5 +68,5 @@ jobs:
             
             - name: Deploy CDK Stack
               run: |
-                npx cdk deploy
+                npx cdk deploy --require-approval never
                 echo "Deployed successfully."
