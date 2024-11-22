@@ -1,7 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { AttributeType, BillingMode, Table, StreamViewType } from 'aws-cdk-lib/aws-dynamodb';
-import { RestApi, LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
+import { RestApi, LambdaIntegration, Resource } from 'aws-cdk-lib/aws-apigateway';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Runtime, StartingPosition, FilterCriteria, FilterRule } from 'aws-cdk-lib/aws-lambda';
 import { Topic, Subscription, SubscriptionProtocol } from 'aws-cdk-lib/aws-sns';
@@ -13,7 +13,7 @@ export class ExamPreparationStack extends cdk.Stack
     {
         super( scope, id, props );
         
-        const errorTable: cdk.aws_dynamodb.Table = new Table( this, 'ErrorTable', {
+        const errorTable: Table = new Table( this, 'ErrorTable', {
             partitionKey: {
                 name: 'id',
                 type: AttributeType.STRING
@@ -27,7 +27,7 @@ export class ExamPreparationStack extends cdk.Stack
             topicName: 'ErrorTopic'
         });
         
-        const processFunction: cdk.aws_lambda_nodejs.NodejsFunction = new NodejsFunction( this, 'processFunction', {
+        const processFunction: NodejsFunction = new NodejsFunction( this, 'processFunction', {
             runtime: Runtime.NODEJS_20_X,
             handler: 'handler',
             entry: `${__dirname}/../src/processFunction.ts`,
@@ -37,7 +37,7 @@ export class ExamPreparationStack extends cdk.Stack
             }
         });
         
-        const cleanupFunction: cdk.aws_lambda_nodejs.NodejsFunction = new NodejsFunction( this, 'cleanupFunction', {
+        const cleanupFunction: NodejsFunction = new NodejsFunction( this, 'cleanupFunction', {
             runtime: Runtime.NODEJS_20_X,
             handler: 'handler',
             entry: `${__dirname}/../src/cleanupFunction.ts`,
@@ -52,8 +52,8 @@ export class ExamPreparationStack extends cdk.Stack
         errorTable.grantReadWriteData( processFunction );
         errorTable.grantReadWriteData( cleanupFunction );
         
-        const api: cdk.aws_apigateway.RestApi = new RestApi( this, 'ProcessorApi' );
-        const resource: cdk.aws_apigateway.Resource = api.root.addResource( 'processJSON' );
+        const api: RestApi = new RestApi( this, 'ProcessorApi' );
+        const resource: Resource = api.root.addResource( 'processJSON' );
         resource.addMethod( 'POST', new LambdaIntegration( processFunction ) );
         
         new Subscription( this, 'ErrorSubscription', {
